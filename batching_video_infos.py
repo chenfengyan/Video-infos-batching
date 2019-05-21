@@ -26,12 +26,14 @@ class FileCheck:
         """
         clip = VideoFileClip(filename)
         file_time = clip.duration
+        file_width = clip.size[0]
+        file_height = clip.size[1]
         u"""
         Clear clip buffer otherwise report OSError: [WinError 6] The handle is invalid
         """
         clip.reader.close()
         clip.audio.reader.close_proc()
-        return file_time
+        return file_time, file_width, file_height
 
     def get_all_video_file(self):
         u"""
@@ -52,14 +54,13 @@ class FileCheck:
             for file in files:
                 file_name = os.path.join(root, file)
                 all_files.append(file_name)
-            for dirname in dirs:
-                # Call iter_files recursively
-                self.iter_files(dirname)
+
 
     def is_video_file(self, file):
         suffix = os.path.splitext(file)[1]
         # Add the video filename suffix you need
-        if suffix == '.mp4' or suffix == '.mkv' or suffix == '.wmv':
+        if suffix == '.mp4' or suffix == '.mkv' or suffix == '.wmv'\
+                or suffix == '.avi' or suffix == 'mpg':
             return True
 
         return False
@@ -70,16 +71,21 @@ def main():
     print(u"=============Started and waiting...")
     fc = FileCheck()
     files = fc.get_all_video_file()
-    datas = [[u'FileName', u'Size', u'Duration']]  # two-dimensional array
+    datas = [[u'FileName', u'Size', u'Duration', u'Width', u'Height', u'CompressRatio']]  # two-dimensional array
     for f in files:
         cell = []
         file_path = os.path.join(file_dir, f)
         file_size = fc.get_filesize(file_path)
-        file_times = fc.get_file_times(file_path)
-        print(u"FileName：{filename},Size：{filesize},Duration：{filetimes}".format(filename=f, filesize=file_size, filetimes=file_times))
+        file_times, file_width, file_height = fc.get_file_times(file_path)
+        print(u"FileName:{filename},Size:{filesize},Duration:{filetimes},Width:{filewidth},Height:{fileheight}"
+		      .format(filename=f, filesize=file_size, filetimes=file_times, filewidth=file_width, fileheight=file_height))
         cell.append(f)
         cell.append(file_size)
         cell.append(file_times)
+        cell.append(file_width)
+        cell.append(file_height)
+        file_compress = file_size / file_times * (1920 * 1080 / (file_width * file_height))
+        cell.append(file_compress)
         datas.append(cell)
 
     wb = xlwt.Workbook()  # Create Workbook
